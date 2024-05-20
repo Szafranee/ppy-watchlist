@@ -3,38 +3,45 @@ from film import Film
 
 class CollectionManager:
     def __init__(self):
-        self.collection = []
-        self.films = []
+        self.film_collection = []
+        self.watched_films = []
 
     def add_film(self, film: Film):
-        self.collection.append(film)
+        self.film_collection.append(film)
 
     def remove_film(self, film: Film):
-        self.collection.remove(film)
+        self.film_collection.remove(film)
 
     def get_films(self):
-        return self.collection
+        return self.film_collection
 
     def get_watched(self):
-        return self.films
+        return self.watched_films
 
     def search_films(self, **kwargs):
         result = []
-        for film in self.collection:
+        for film in self.film_collection:
             if all(getattr(film, key) == value for key, value in kwargs.items()):
                 result.append(film)
         return result
 
     def __str__(self):
-        return '\n'.join([str(film) for film in self.collection])
+        response = "Your collection:\n"
+        for film in self.film_collection:
+            response += str(film) + "\n"
+        return response
+
+    def __repr__(self):
+        return '\n'.join([repr(film) for film in self.film_collection])
 
     def watch_film(self, film: Film, date: str):
-        self.films.append(film)
+        self.watched_films.append(film)
+        if film.get_status() == "not watched":
+            film.change_status()
         film.get_watch_dates().append(date)
-        film.set_status("watched")
 
     def print_watched(self):
-        return '\n'.join([str(film) + ", watched on: " + ", ".join(film.get_watch_dates()) for film in self.films])
+        return '\n'.join([str(film) + ", watched on: " + ", ".join(film.get_watch_dates()) for film in self.watched_films])
 
     def generate_stats(self, films):
         films_stats = {}
@@ -55,7 +62,7 @@ class CollectionManager:
 
     def count_by_genres(self, films):
         genres_stats = {}
-        for film in self.films:
+        for film in self.watched_films:
             if film.get_genre() in genres_stats:
                 genres_stats[film.get_genre()] += 1
             else:
@@ -64,7 +71,7 @@ class CollectionManager:
 
     def calculate_avg_rating(self, films):
         total = 0
-        for film in self.films:
+        for film in self.watched_films:
             total += film.get_rating()
         return total / len(films)
 
