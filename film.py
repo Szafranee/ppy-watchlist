@@ -1,11 +1,14 @@
+from datetime import datetime
+
 from exceptions import ScaleError
 
 
 class Film:
-    def __init__(self, title: str, director: str, year: int, genre: str, rating: float, status: str):
+    def __init__(self, title: str, director: str, year: int, length: datetime, genre: str, rating: float, status: str):
         self.__title = title
         self.__director = director
         self.__year = year
+        self.__length = length
         self.__rating = rating
         self.__genre = genre
         self.__status = status
@@ -22,6 +25,9 @@ class Film:
 
     def get_year(self):
         return self.__year
+
+    def get_length(self):
+        return self.__length
 
     def get_rating(self):
         return self.__rating
@@ -48,6 +54,9 @@ class Film:
 
     def set_year(self, year: int):
         self.__year = year
+
+    def set_length(self, length: datetime):
+        self.__length = length
 
     def set_genre(self, genre: str):
         self.__genre = genre
