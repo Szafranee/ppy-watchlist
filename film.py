@@ -6,18 +6,16 @@ status = ["watched", "not watched"]
 
 
 class Film:
-    def __init__(self, title: str, director: str, year: int, length: int, genre: str, rating=0.0,
-                 watch_status="not watched"):
+    def __init__(self, title: str, director: str, year: int, length: datetime, genre: str):
         self.__title = title
         self.__director = director
         self.__year = year
         self.__length = length
-        self.__rating = rating
+        self.__rating = 0.0
         self.__genre = genre
-        self.__status = watch_status
+        self.__status = status
         self.__comments = []
         self.__watch_dates = []
-
     # ========== Getters
 
     def get_title(self):
@@ -58,7 +56,7 @@ class Film:
     def set_year(self, year: int):
         self.__year = year
 
-    def set_length(self, length: int):
+    def set_length(self, length: datetime):
         self.__length = length
 
     def set_genre(self, genre: str):

@@ -1,10 +1,12 @@
+from datetime import datetime, date
+
 from film import Film
 
 
 class CollectionManager:
     def __init__(self):
         self.film_collection = []
-        self.watched_films = []
+        self.watched_films = set()
 
     def add_film(self, film: Film):
         self.film_collection.append(film)
@@ -34,14 +36,20 @@ class CollectionManager:
     def __repr__(self):
         return '\n'.join([repr(film) for film in self.film_collection])
 
-    def watch_film(self, film: Film, date: str):
-        self.watched_films.append(film)
+    def watch_film(self, film: Film, watch_date: date):
+        self.watched_films.add(film)
         if film.get_status() == "not watched":
             film.change_status()
-        film.get_watch_dates().append(date)
+        film.get_watch_dates().append(watch_date)
 
     def print_watched(self):
-        return '\n'.join([str(film) + ", watched on: " + ", ".join(film.get_watch_dates()) for film in self.watched_films])
+        response = "Watched films:\n"
+        for film in self.watched_films:
+            response += "● " + film.get_title() + " (" + str(film.get_year()) + ")\n"
+            response += "  " + "Watched on: " + ", ".join(str(watch_date) for watch_date in film.get_watch_dates()) + "\n"
+            response += "\n"
+
+        return response
 
     def generate_stats(self, films):
         films_stats = {}
