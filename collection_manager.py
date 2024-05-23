@@ -28,7 +28,7 @@ class CollectionManager:
         return result
 
     def __str__(self):
-        response = "Your collection:\n"
+        response = ""
         for film in self.film_collection:
             response += str(film) + "\n"
         return response
@@ -97,3 +97,7 @@ class CollectionManager:
     def count_rated_film_by_genre(self, films):
         rated_films = [film for film in films if film.get_rating() > 0]
         return self.count_by_genres(rated_films)
+
+    def clear_collection(self):
+        self.film_collection = []
+        self.watched_films = set()
