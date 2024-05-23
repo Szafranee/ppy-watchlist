@@ -6,12 +6,12 @@ POSSIBLE_STATUSES = ["watched", "not watched"]
 
 
 class Film:
-    def __init__(self, title: str, director: str, year: int, length: int, genre: str):
+    def __init__(self, title: str, director: str, year: int, length: int, genre: tuple):
         self.__title = title
         self.__director = director
         self.__year = year
         self.__length = length
-        self.__genre = genre
+        self.__genre = tuple(genre.split(", ")) if isinstance(genre, str) else genre
         self.__rating = 'Not rated yet'
         self.__watch_status = POSSIBLE_STATUSES[1]
         self.__comments = []
@@ -97,7 +97,7 @@ class Film:
         film_info = "● "
         film_info += f"{self.__title} ({self.__year}), directed by {self.__director}.\n"
         film_info += (
-            f"\t○ Genre: {self.__genre}\n"
+            f"\t○ Genre(s): {', '.join(self.__genre)}\n"
             f"\t○ Length: {self.__length} minutes\n"
         )
         film_info += f"\t○ Rating: {self.__rating}/10\n" if self.__rating != 'Not rated yet' else f"\t○ Rating: {self.__rating}\n"

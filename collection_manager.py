@@ -10,6 +10,7 @@ class CollectionManager:
 
     def add_film(self, film: Film):
         self.film_collection.append(film)
+        self.film_collection.sort(key=lambda x: x.get_title())  # Keeps the collection sorted by title
 
     def remove_film(self, film: Film):
         self.film_collection.remove(film)
@@ -23,8 +24,9 @@ class CollectionManager:
     def search_films(self, **kwargs):
         result = []
         for film in self.film_collection:
-            if all(getattr(film, key) == value for key, value in kwargs.items()):
+            if all(getattr(film, 'get_' + key)() == value for key, value in kwargs.items()):
                 result.append(film)
+
         return result
 
     def __str__(self):

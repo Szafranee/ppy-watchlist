@@ -1,11 +1,13 @@
+import json
 from datetime import datetime, date
 
 import collection_manager
+import file_operations
 import film
 
 film_collection = collection_manager.CollectionManager()
 
-film_collection.add_film(film.Film("The Shawshank Redemption", "Frank Darabont", 1994, 142, "Drama"))
+film_collection.add_film(film.Film("The Shawshank Redemption", "Frank Darabont", 1994, 142, ("Drama", "Crime")))
 film_collection.add_film(film.Film("The Dark Knight", "Christopher Nolan", 2008, 152, "Action"))
 film_collection.add_film(film.Film("Inception", "Christopher Nolan", 2010, 148, "Action"))
 film_collection.add_film(film.Film("The Matrix", "Lana Wachowski", 1999, 136, "Action"))
@@ -33,4 +35,44 @@ print(film_collection)
 
 print(film_collection.print_watched())
 
+film1 = film.Film("Who killed Captain Alex?", "Nabwana I.G.G.", 2010, 68, ("Action", "Comedy"))
+film2 = film.Film("The Room", "Tommy Wiseau", 2003, 99, "Drama")
 
+film1.set_rating(10)
+film2.set_rating(9.5)
+
+film1.set_status("watched")
+film1.add_comment("This is a great movie!")
+film1.add_comment("XD")
+film1.add_watch_date("2021-05-05")
+film1.add_watch_date("2021-05-08")
+
+film2.set_status("watched")
+film2.add_comment("I love this movie!")
+film2.add_watch_date("2021-05-06")
+
+print("Collection before adding films:")
+
+file_operations.write_collection_to_json_file("films.json", film_collection)
+
+file_operations.load_collection_from_json_file("films.json", film_collection)
+
+print(film_collection)
+
+film_collection.add_film(film1)
+film_collection.add_film(film2)
+
+print("Collection after adding films:")
+file_operations.write_collection_to_json_file("films.json", film_collection)
+
+file_operations.load_collection_from_json_file("films.json", film_collection)
+
+print(film_collection)
+
+file_operations.export_to_txt_file("films.txt", film_collection)
+
+print("afasfafa")
+found_films = film_collection.search_films(title="The Dark Knight")
+print("Found films:")
+for film in found_films:
+    print(film)
