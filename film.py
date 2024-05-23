@@ -11,8 +11,8 @@ class Film:
         self.__director = director
         self.__year = year
         self.__length = length
-        self.__rating = 'Not rated yet'
         self.__genre = genre
+        self.__rating = 'Not rated yet'
         self.__watch_status = POSSIBLE_STATUSES[1]
         self.__comments = []
         self.__watch_dates = []
@@ -64,9 +64,22 @@ class Film:
         self.__genre = genre
 
     def set_rating(self, rating: float):
-        self.__rating = rating
-        if self.__rating < 0 or self.__rating > 10:
+        if rating == 'Not rated yet':
+            self.__rating = rating
+            return
+
+        if rating < 0.0 or rating > 10.0:
             raise ScaleError("Rating must be in range 0-10")
+
+        if rating % 1 == 0:
+            rating = int(rating)
+
+        self.__rating = rating
+
+    def set_status(self, status: str):
+        if status not in POSSIBLE_STATUSES:
+            raise ValueError("Invalid status")
+        self.__watch_status = status
 
     def change_status(self):
         self.__watch_status = POSSIBLE_STATUSES[0] if self.__watch_status == POSSIBLE_STATUSES[1] else \
@@ -75,7 +88,7 @@ class Film:
     def add_comment(self, comment: str):
         self.__comments.append(comment)
 
-    def add_watch_date(self, date: str):
+    def add_watch_date(self, date: datetime.date):
         self.__watch_dates.append(date)
 
     # ========== Overriden default methods
@@ -93,14 +106,13 @@ class Film:
         if self.__comments:
             film_info += "\t○ Comments:\n"
             for comment in self.__comments:
-                film_info += f"\t\t- {comment}\n"
+                film_info += f"\t\t- \"{comment}\"\n"
 
         if self.__watch_dates:
             film_info += "\t○ Watched on:\n"
             for date in self.__watch_dates:
                 film_info += f"\t\t- {date}\n"
 
-        film_info += "\n"
         return film_info
 
     def __repr__(self):
@@ -137,9 +149,10 @@ class Film:
             "length": self.__length,
             "rating": self.__rating,
             "genre": self.__genre,
-            "status": self.__watch_status,
+            "watch_status": self.__watch_status,
             "comments": self.__comments,
-            "watch_dates": [date.isoformat() for date in self.__watch_dates]  # convert date objects to string
+            "watch_dates": [str(date) for date in self.__watch_dates]
+            # convert date objects to string
         }
 
     def delete_comment(self):
