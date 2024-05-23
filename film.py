@@ -2,20 +2,21 @@ from datetime import datetime
 
 from exceptions import ScaleError
 
-status = ["watched", "not watched"]
+POSSIBLE_STATUSES = ["watched", "not watched"]
 
 
 class Film:
-    def __init__(self, title: str, director: str, year: int, length: datetime, genre: str):
+    def __init__(self, title: str, director: str, year: int, length: int, genre: str):
         self.__title = title
         self.__director = director
         self.__year = year
         self.__length = length
-        self.__rating = 0.0
+        self.__rating = 'Not rated yet'
         self.__genre = genre
-        self.__status = status
+        self.__watch_status = POSSIBLE_STATUSES[1]
         self.__comments = []
         self.__watch_dates = []
+
     # ========== Getters
 
     def get_title(self):
@@ -37,7 +38,7 @@ class Film:
         return self.__genre
 
     def get_status(self):
-        return self.__status
+        return self.__watch_status
 
     def get_comments(self):
         return self.__comments
@@ -56,7 +57,7 @@ class Film:
     def set_year(self, year: int):
         self.__year = year
 
-    def set_length(self, length: datetime):
+    def set_length(self, length: int):
         self.__length = length
 
     def set_genre(self, genre: str):
@@ -68,7 +69,8 @@ class Film:
             raise ScaleError("Rating must be in range 0-10")
 
     def change_status(self):
-        self.__status = status[0] if self.__status == status[1] else status[1]
+        self.__watch_status = POSSIBLE_STATUSES[0] if self.__watch_status == POSSIBLE_STATUSES[1] else \
+            POSSIBLE_STATUSES[1]
 
     def add_comment(self, comment: str):
         self.__comments.append(comment)
@@ -80,40 +82,29 @@ class Film:
 
     def __str__(self):
         film_info = "● "
-        if self.__status == "watched" and len(self.__comments) == 0:  # If the film is watched but has no comments
-            film_info += f"{self.__title} ({self.__year}), directed by {self.__director}.\n"
-            film_info += (f"\t- Genre: {self.__genre}\n"
-                          f"\t- Length: {self.__length} minutes\n"
-                          f"\t- Rating: {self.__rating}/10\n"
-                          f"\t- Status: {self.__status}\n"
-                          f"\t- Watched on: {', '.join(self.__watch_dates)}")
-        elif self.__status == "watched" and len(self.__comments) > 0:  # If the film is watched and has comments
-            film_info += f"{self.__title} ({self.__year}), directed by {self.__director}.\n"
-            film_info += (f"\t- Genre: {self.__genre}\n"
-                          f"\t- Length: {self.__length} minutes\n"
-                          f"\t- Rating: {self.__rating}/10\n"
-                          f"\t- Status: {self.__status}\n"
-                          f"\t- Watched on: {', '.join(self.__watch_dates)}\n"
-                          f"\t- Comments: {', '.join(self.__comments)}")
-        elif not self.__status == "not watched" and len(self.__comments) > 0:  # if the film is not watched but commented
-            film_info += f"{self.__title} ({self.__year}), directed by {self.__director}.\n"
-            film_info += (f"\t- Genre: {self.__genre}\n"
-                          f"\t- Length: {self.__length} minutes\n"
-                          f"\t- Rating: {self.__rating}/10\n"
-                          f"\t- Status: {self.__status}\n"
-                          f"\t- Comments: {', '.join(self.__comments)}")
-        else:  # if the film is not watched and has no comments
-            film_info += f"{self.__title} ({self.__year}), directed by {self.__director}.\n"
-            film_info += (f"\t- Genre: {self.__genre}\n"
-                          f"\t- Length: {self.__length} minutes\n"
-                          f"\t- Rating: {self.__rating}/10\n"
-                          f"\t- Status: {self.__status}")
+        film_info += f"{self.__title} ({self.__year}), directed by {self.__director}.\n"
+        film_info += (
+            f"\t○ Genre: {self.__genre}\n"
+            f"\t○ Length: {self.__length} minutes\n"
+        )
+        film_info += f"\t○ Rating: {self.__rating}/10\n" if self.__rating != 'Not rated yet' else f"\t○ Rating: {self.__rating}\n"
+        film_info += f"\t○ Status: {self.__watch_status}\n"
+
+        if self.__comments:
+            film_info += "\t○ Comments:\n"
+            for comment in self.__comments:
+                film_info += f"\t\t- {comment}\n"
+
+        if self.__watch_dates:
+            film_info += "\t○ Watched on:\n"
+            for date in self.__watch_dates:
+                film_info += f"\t\t- {date}\n"
 
         film_info += "\n"
         return film_info
 
     def __repr__(self):
-        return f"Film('{self.__title}', '{self.__director}', {self.__year}, '{self.__genre}', {self.__rating}, {self.__status}, {self.__comments}, {self.__watch_dates})"
+        return f"Film('{self.__title}', '{self.__director}', {self.__year}, '{self.__genre}', {self.__rating}, {self.__watch_status}, {self.__comments}, {self.__watch_dates})"
 
     def __eq__(self, other):
         return self.__title == other.get_title() and self.__director == other.get_director() and self.__year == other.get_year()
@@ -135,3 +126,32 @@ class Film:
 
     def __hash__(self):
         return hash((self.__title, self.__director, self.__year))
+
+    # ========== Additional methods
+
+    def to_dict(self):
+        return {
+            "title": self.__title,
+            "director": self.__director,
+            "year": self.__year,
+            "length": self.__length,
+            "rating": self.__rating,
+            "genre": self.__genre,
+            "status": self.__watch_status,
+            "comments": self.__comments,
+            "watch_dates": [date.isoformat() for date in self.__watch_dates]  # convert date objects to string
+        }
+
+    def delete_comment(self):
+        print("Select the comment you want to delete:")
+        for i, comment in enumerate(self.__comments):
+            print(f"{i + 1}. {comment}")
+        try:
+            index = int(input())
+            self.__comments.pop(index - 1)
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+            self.delete_comment()
+        except IndexError:
+            print("Invalid input. Please enter a number from the list.")
+            self.delete_comment()
