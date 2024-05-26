@@ -37,7 +37,7 @@ def load_collection_from_json_file(file_path, film_collection):
 
 def export_to_txt_file(file_path, film_collection):
     with open(file_path, "w", encoding="utf-8") as file:
-        file.write("=================Your awesome film collection=======================\n\n")
+        file.write("=================Your awesome film collection!=======================\n\n")
         file.write(str(film_collection))
         file.write("=====================================================================\n")
 

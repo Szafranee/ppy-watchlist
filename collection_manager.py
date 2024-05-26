@@ -31,8 +31,8 @@ class CollectionManager:
 
     def __str__(self):
         response = ""
-        for film in self.film_collection:
-            response += str(film) + "\n"
+        for number, film in enumerate(self.film_collection, 1):
+            response += str(number) + ". " + str(film) + "\n"
         return response
 
     def __repr__(self):

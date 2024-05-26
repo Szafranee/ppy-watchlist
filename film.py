@@ -94,8 +94,7 @@ class Film:
     # ========== Overriden default methods
 
     def __str__(self):
-        film_info = "● "
-        film_info += f"{self.__title} ({self.__year}), directed by {self.__director}.\n"
+        film_info = f"{self.__title} ({self.__year}), directed by {self.__director}.\n"
         film_info += (
             f"\t○ Genre(s): {', '.join(self.__genre)}\n"
             f"\t○ Length: {self.__length} minutes\n"
