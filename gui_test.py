@@ -4,6 +4,7 @@ from PIL import Image, ImageTk
 
 import collection_manager
 import file_operations
+import film
 
 # Sample film data (replace with your actual data)
 film_collection = collection_manager.CollectionManager()
@@ -182,7 +183,48 @@ class WatchlistApp:
         pass
 
     def add_film(self):
-        pass
+        # display a popup window with a message, 5 text entries, and a button
+        popup = tk.Toplevel()
+        popup.title("Add film")
+        popup.geometry("300x400")
+        popup.config(bg="#333")
+
+        # create a label
+        label = tk.Label(popup, text="Enter the details of the film:", bg="#333", fg="white", font=("Bahnschrift", 11, "bold"))
+        label.pack(pady=10)
+
+        # create entry widgets
+        entries = []
+        for field in ["Title", "Director", "Year", "Length", "Genre(s)"]:
+            entry_frame = tk.Frame(popup, bg="#333")
+            entry_frame.pack(pady=5)
+            label = tk.Label(entry_frame, text=field, bg="#333", fg="white")
+            label.pack(side="left")
+            entry = tk.Entry(entry_frame, bg="#444", fg="white")
+            entry.pack(side="right")
+            entries.append(entry)
+
+        # create a button
+        button = tk.Button(popup, text="Add", command=lambda: add_film_action(entries))
+        button.pack(pady=10)
+
+        # bind the <Return> event to the last entry widget
+        entries[-1].bind("<Return>", lambda event: add_film_action(entries))
+
+        def add_film_action(entries):
+            # get the values from the entry widgets
+            title, director, year, length, genres = [entry.get() for entry in entries]
+            # add the film to the collection
+            new_film = film.Film(title, director, int(year), int(length), genres.split(", "))
+            film_collection.add_film(new_film)
+            # close the popup window
+            popup.destroy()
+            # repopulate the film listbox
+            self.populate_film_list()
+            # select the newly added film in the listbox
+            self.search_in_listbox(new_film.get_title())
+            # display the details of the newly added film
+            self.display_film_details(None)
 
     def edit_film(self):
         pass
@@ -196,8 +238,19 @@ class WatchlistApp:
         except IndexError:
             pass
 
+    def search_in_listbox(self, search_term):
+        if not search_term:
+            return
+        for i, film in enumerate(film_collection.get_films()):
+            if search_term.lower() in film.get_title().lower():
+                self.film_listbox.selection_clear(0, tk.END)
+                self.film_listbox.selection_set(i)
+                self.film_listbox.see(i)
+                break
+
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = WatchlistApp(root)
     root.mainloop()
+    file_operations.write_collection_to_json_file("films.json", film_collection)
