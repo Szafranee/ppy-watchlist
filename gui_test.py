@@ -1,10 +1,19 @@
 import tkinter as tk
 import random
+
+import requests
 from PIL import Image, ImageTk
 
 import collection_manager
 import file_operations
 import film
+
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+OMDB_API_KEY = os.getenv("OMDB_API_KEY")
 
 # Sample film data (replace with your actual data)
 film_collection = collection_manager.CollectionManager()
@@ -123,9 +132,14 @@ class WatchlistApp:
         # Clear the listbox
         self.film_listbox.delete(0, tk.END)
 
+        already_added = []
         # Add film entries to the listbox
         for film in film_collection.get_films():
-            self.film_listbox.insert(tk.END, film.get_title())
+            if film.get_title() in already_added:
+                self.film_listbox.insert(tk.END, film.get_title() + " (" + str(film.get_year()) + ")")
+            else:
+                self.film_listbox.insert(tk.END, film.get_title())
+                already_added.append(film.get_title())
 
     def display_film_details(self, event):
         # Clear the details frame
@@ -140,7 +154,13 @@ class WatchlistApp:
 
             # Load and resize image
             image_path = film.get_cover_image_path()
-            image = Image.open(image_path).resize((300, 400), Image.Resampling.LANCZOS)
+            # the image path can be a URL or a local path
+            if image_path.startswith("http"):
+                image = Image.open(requests.get(image_path, stream=True).raw)
+                image = image.resize((300, 400))
+            else:
+                image = Image.open(image_path)
+                image = image.resize((300, 400))
             photo = ImageTk.PhotoImage(image)
 
             # Create image label
@@ -149,15 +169,15 @@ class WatchlistApp:
             image_label.pack(pady=10)
 
             # Create details labels
-            for key, value in film.to_dict(film).items():
+            for key, value in film.to_dict().items():
                 if key == "cover_image_path":
                     continue
                 if key == "comments":
-                    if not value: # Skip if there are no comments
+                    if not value:  # Skip if there are no comments
                         continue
                     value = "\"" + "\", \"".join(value) + "\""
                 if key == "watch_dates":
-                    if not value: # Skip if there are no watch dates
+                    if not value:  # Skip if there are no watch dates
                         continue
                     key = "Watch dates"
                     value = ", ".join(value)
@@ -171,9 +191,11 @@ class WatchlistApp:
                     value = ", ".join(value) if isinstance(value, list) else value
                 detail_frame = tk.Frame(self.details_frame, bg="#444")
                 detail_frame.pack(fill="x")
-                key_label = tk.Label(detail_frame, text=f"{key.capitalize()}:", bg="#444", fg="white", font=("Bahnschrift", 13))
+                key_label = tk.Label(detail_frame, text=f"{key.capitalize()}:", bg="#444", fg="white",
+                                     font=("Bahnschrift", 13))
                 key_label.pack(side="left")
-                value_label = tk.Label(detail_frame, text=f"{value}", bg="#444", fg="white", font=("Bahnschrift", 15, "bold"))
+                value_label = tk.Label(detail_frame, text=f"{value}", bg="#444", fg="white",
+                                       font=("Bahnschrift", 15, "bold"))
                 value_label.pack(side="left")
 
     def search_by_title(self):
@@ -190,7 +212,8 @@ class WatchlistApp:
         popup.config(bg="#333")
 
         # create a label
-        label = tk.Label(popup, text="Enter the details of the film:", bg="#333", fg="white", font=("Bahnschrift", 11, "bold"))
+        label = tk.Label(popup, text="Enter the details of the film:", bg="#333", fg="white",
+                         font=("Bahnschrift", 11, "bold"))
         label.pack(pady=10)
 
         # create entry widgets
@@ -214,6 +237,33 @@ class WatchlistApp:
         def add_film_action(entries):
             # get the values from the entry widgets
             title, director, year, length, genres = [entry.get() for entry in entries]
+
+            if not title:  # display an error message
+                # destroy the previous error message if it exists
+                for widget in popup.winfo_children():
+                    if isinstance(widget, tk.Label) and widget.cget("fg") == "red":
+                        widget.destroy()
+                error_label = tk.Label(popup, text="Title cannot be empty!", bg="#333", fg="red")
+                error_label.pack()
+                return
+
+            if not year:
+                film_json = requests.get(f"https://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}").json()
+            else:
+                film_json = requests.get(f"https://www.omdbapi.com/?t={title}&y={year}&apikey={OMDB_API_KEY}").json()
+
+            if title != film_json["Title"]:
+                title = film_json["Title"]
+
+            if not director:
+                director = film_json["Director"]
+            if not year:
+                year = film_json["Year"]
+            if not length:
+                length = film_json["Runtime"].split(" ")[0]
+            if not genres:
+                genres = film_json["Genre"]
+
             # add the film to the collection
             new_film = film.Film(title, director, int(year), int(length), genres.split(", "))
             film_collection.add_film(new_film)
@@ -222,7 +272,7 @@ class WatchlistApp:
             # repopulate the film listbox
             self.populate_film_list()
             # select the newly added film in the listbox
-            self.search_in_listbox(new_film.get_title())
+            self.search_in_listbox(new_film.get_title(), new_film.get_year())
             # display the details of the newly added film
             self.display_film_details(None)
 
@@ -238,11 +288,11 @@ class WatchlistApp:
         except IndexError:
             pass
 
-    def search_in_listbox(self, search_term):
-        if not search_term:
+    def search_in_listbox(self, title, year):
+        if not title:
             return
         for i, film in enumerate(film_collection.get_films()):
-            if search_term.lower() in film.get_title().lower():
+            if title.lower() in film.get_title().lower() and year == film.get_year():
                 self.film_listbox.selection_clear(0, tk.END)
                 self.film_listbox.selection_set(i)
                 self.film_listbox.see(i)
