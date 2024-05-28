@@ -16,6 +16,7 @@ class Film:
         self.__watch_status = POSSIBLE_STATUSES[1]
         self.__comments = []
         self.__watch_dates = []
+        self.__cover_image_path = None
 
     # ========== Getters
 
@@ -45,6 +46,9 @@ class Film:
 
     def get_watch_dates(self):
         return self.__watch_dates
+
+    def get_cover_image_path(self):
+        return self.__cover_image_path
 
     # ========== Setters
 
@@ -90,6 +94,9 @@ class Film:
 
     def add_watch_date(self, date: datetime.date):
         self.__watch_dates.append(date)
+
+    def set_cover_image_path(self, path: str):
+        self.__cover_image_path = path
 
     # ========== Overriden default methods
 
@@ -150,7 +157,8 @@ class Film:
             "genre": self.__genre,
             "watch_status": self.__watch_status,
             "comments": self.__comments,
-            "watch_dates": [str(date) for date in self.__watch_dates]
+            "watch_dates": [str(date) for date in self.__watch_dates],
+            "cover_image_path": self.__cover_image_path if self.__cover_image_path else "missing_cover.jpg"
             # convert date objects to string
         }
 

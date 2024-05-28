@@ -32,6 +32,8 @@ def load_collection_from_json_file(file_path, film_collection):
             if "watch_dates" in film_json:
                 for watch_date in film_json["watch_dates"]:
                     film_obj.add_watch_date(watch_date)
+            if "cover_image_path" in film_json:
+                film_obj.set_cover_image_path(film_json["cover_image_path"])
             film_collection.add_film(film_obj)
 
 
