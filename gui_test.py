@@ -58,13 +58,13 @@ class WatchlistApp:
         self.root.tk_setPalette(background='#333', foreground='white')
 
         # Menu (same as before)
-        self.menu = tk.Menu(self.root)
-        self.root.config(menu=self.menu)
+        self.menu = tk.Menu(self.root, bg='blue', fg="white")
 
-        self.file_menu = tk.Menu(self.menu)
+        self.file_menu = tk.Menu(self.menu, tearoff=False)
         self.menu.add_cascade(label="File", menu=self.file_menu)
         self.file_menu.add_command(label="Export to file", command=export_to_file)
 
+        self.root.config(menu=self.menu)
         # Main frame
         self.main_frame = tk.Frame(self.root)
         self.main_frame.pack(fill="both", expand=True)
@@ -172,23 +172,34 @@ class WatchlistApp:
             for key, value in film.to_dict().items():
                 if key == "cover_image_path":
                     continue
+
+                if key == "director":
+                    key = "Director"
+                    value = ", ".join(value) if isinstance(value, list) else value
+
                 if key == "comments":
                     if not value:  # Skip if there are no comments
                         continue
                     value = "\"" + "\", \"".join(value) + "\""
+
                 if key == "watch_dates":
                     if not value:  # Skip if there are no watch dates
                         continue
                     key = "Watch dates"
                     value = ", ".join(value)
+
                 if key == "watch_status":
                     key = "Watch status"
+
                 if key == "length":
                     value = f"{value} minutes"
+
                 if key == "rating":
                     value = f"{value}/10" if value != "Not rated yet" else value
+
                 if key == "genre":
                     value = ", ".join(value) if isinstance(value, list) else value
+
                 detail_frame = tk.Frame(self.details_frame, bg="#444")
                 detail_frame.pack(fill="x")
                 key_label = tk.Label(detail_frame, text=f"{key.capitalize()}:", bg="#444", fg="white",
@@ -218,7 +229,7 @@ class WatchlistApp:
 
         # create entry widgets
         entries = []
-        for field in ["Title", "Director", "Year", "Length", "Genre(s)"]:
+        for field in ["Title", "Director", "Year", "Length", "Genre(s)", "Cover image path"]:
             entry_frame = tk.Frame(popup, bg="#333")
             entry_frame.pack(pady=5)
             label = tk.Label(entry_frame, text=field, bg="#333", fg="white")
@@ -226,6 +237,9 @@ class WatchlistApp:
             entry = tk.Entry(entry_frame, bg="#444", fg="white")
             entry.pack(side="right")
             entries.append(entry)
+
+        # center the popup window
+        self.center_popup(popup)
 
         # create a button
         button = tk.Button(popup, text="Add", command=lambda: add_film_action(entries))
@@ -236,7 +250,7 @@ class WatchlistApp:
 
         def add_film_action(entries):
             # get the values from the entry widgets
-            title, director, year, length, genres = [entry.get() for entry in entries]
+            title, director, year, length, genres, cover_file_path = [entry.get() for entry in entries]
 
             if not title:  # display an error message
                 # destroy the previous error message if it exists
@@ -247,25 +261,51 @@ class WatchlistApp:
                 error_label.pack()
                 return
 
+            is_custom_film = False
+
             if not year:
                 film_json = requests.get(f"https://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}").json()
+                if film_json["Response"] == "False":
+                    is_custom_film = True
             else:
                 film_json = requests.get(f"https://www.omdbapi.com/?t={title}&y={year}&apikey={OMDB_API_KEY}").json()
+                if film_json["Response"] == "False":
+                    is_custom_film = True
 
-            if title != film_json["Title"]:
-                title = film_json["Title"]
+            if not is_custom_film:
+                if title != film_json["Title"]:
+                    title = film_json["Title"]
 
-            if not director:
-                director = film_json["Director"]
-            if not year:
-                year = film_json["Year"]
-            if not length:
-                length = film_json["Runtime"].split(" ")[0]
-            if not genres:
-                genres = film_json["Genre"]
+                if not director:
+                    director = film_json["Director"]
+                if not year:
+                    year = film_json["Year"]
+                if not length:
+                    length = film_json["Runtime"].split(" ")[0]
+                if not genres:
+                    genres = film_json["Genre"]
+            else:
+                if not director:
+                    director = "Unknown"
+                if not year:
+                    year = 0
+                if not length:
+                    length = 0
+                if not genres:
+                    genres = "Unknown"
+
+            if cover_file_path:
+                if cover_file_path.startswith("http"):
+                    image = Image.open(requests.get(cover_file_path, stream=True).raw)
+                else:
+                    image = Image.open(cover_file_path)
+                image = image.resize((300, 400))
+                image.save(f"img/{title}.png")
+                cover_file_path = f"img/{title}.png"
 
             # add the film to the collection
-            new_film = film.Film(title, director, int(year), int(length), genres.split(", "))
+            new_film = film.Film(title, director.split(", "), int(year), int(length), genres.split(", "))
+            new_film.set_cover_image_path(cover_file_path)
             film_collection.add_film(new_film)
             # close the popup window
             popup.destroy()
@@ -278,6 +318,120 @@ class WatchlistApp:
 
     def edit_film(self):
         pass
+        # display a popup window with a message, 5 text entries, and a button
+        popup = tk.Toplevel()
+        popup.title("Edit film")
+        popup.geometry("300x400")
+        popup.config(bg="#333")
+
+        # create a label
+        label = tk.Label(popup, text="Enter the details of the film:", bg="#333", fg="white",
+                         font=("Bahnschrift", 11, "bold"))
+        label.pack(pady=10)
+
+        # create entry widgets
+        entries = []
+        for field in ["Title", "Director", "Year", "Length", "Genre(s)", "Cover image path"]:
+            entry_frame = tk.Frame(popup, bg="#333")
+            entry_frame.pack(pady=5)
+            label = tk.Label(entry_frame, text=field, bg="#333", fg="white")
+            label.pack(side="left")
+            entry = tk.Entry(entry_frame, bg="#444", fg="white")
+            entry.pack(side="right")
+            entries.append(entry)
+
+        # center the popup window
+        self.center_popup(popup)
+
+        # get the selected film
+        selection = self.film_listbox.curselection()
+        index = selection[0]
+        selected_film = film_collection.get_films()[index]
+
+        # populate the entry widgets with the selected film's details
+        for entry, value in zip(entries, selected_film.to_dict()):
+            if value != "title" or value != "director" or value != "year" or value != "length" or value != "genre" or value != "cover_image_path":
+                continue
+            entry.insert(0, selected_film.to_dict()[value])
+
+        # create a button
+        button = tk.Button(popup, text="Edit", command=lambda: edit_film_action(entries))
+        button.pack(pady=10)
+
+        # bind the <Return> event to the last entry widget
+        entries[-1].bind("<Return>", lambda event: edit_film_action(entries))
+
+        def edit_film_action(entries):
+            # get the values from the entry widgets
+            title, director, year, length, genres = [entry.get() for entry in entries]
+
+            if not title:
+                # display an error message
+                # destroy the previous error message if it exists
+                for widget in popup.winfo_children():
+                    if isinstance(widget, tk.Label) and widget.cget("fg") == "red":
+                        widget.destroy()
+                error_label = tk.Label(popup, text="Title cannot be empty!", bg="#333", fg="red")
+                error_label.pack()
+                return
+
+            is_custom_film = False
+
+            if not year:
+                film_json = requests.get(f"https://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}").json()
+                if film_json["Response"] == "False":
+                    is_custom_film = True
+            else:
+                film_json = requests.get(f"https://www.omdbapi.com/?t={title}&y={year}&apikey={OMDB_API_KEY}").json()
+                if film_json["Response"] == "False":
+                    is_custom_film = True
+
+            if not is_custom_film:
+                if title != film_json["Title"]:
+                    title = film_json["Title"]
+
+                if not director:
+                    director = film_json["Director"]
+                if not year:
+                    year = film_json["Year"]
+                if not length:
+                    length = film_json["Runtime"].split(" ")[0]
+                if not genres:
+                    genres = film_json["Genre"]
+            else:
+                if not director:
+                    director = "Unknown"
+                if not year:
+                    year = 0
+                if not length:
+                    length = 0
+                if not genres:
+                    genres = "Unknown"
+
+            # update the selected film's details
+            selected_film.set_title(title)
+            selected_film.set_director(director)
+            selected_film.set_year(int(year))
+            selected_film.set_length(int(length))
+            selected_film.set_genre(genres.split(", "))
+            # close the popup window
+            popup.destroy()
+
+            # repopulate the film listbox
+            self.populate_film_list()
+            # select the edited film in the listbox
+            self.search_in_listbox(selected_film.get_title(), selected_film.get_year())
+
+            # display the details of the edited film
+            self.display_film_details(None)
+
+    def center_popup(self, popup):
+        popup.update_idletasks()
+        width = popup.winfo_width()
+        height = popup.winfo_height()
+        x = (popup.winfo_screenwidth() // 2) - (width // 2)
+        y = (popup.winfo_screenheight() // 2) - (height // 2)
+        popup.geometry(f"{width}x{height}+{x}+{y}")
 
     def delete_film(self):
         try:
@@ -285,6 +439,8 @@ class WatchlistApp:
             film = film_collection.get_films()[index]
             film_collection.remove_film(film)
             self.film_listbox.delete(index)
+            self.film_listbox.selection_set(index)
+            self.display_film_details(None)
         except IndexError:
             pass
 
