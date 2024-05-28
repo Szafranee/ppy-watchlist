@@ -10,12 +10,12 @@ POSSIBLE_STATUSES = ["watched", "not watched"]
 
 
 class Film:
-    def __init__(self, title: str, director: [], year: int, length: int, genre: tuple):
+    def __init__(self, title: str, director: [], year: int, length: int, genre: []):
         self.__title = title
         self.__director = director
         self.__year = year
         self.__length = length
-        self.__genre = tuple(genre.split(", ")) if isinstance(genre, str) else genre
+        self.__genre = genre
         self.__rating = 'Not rated yet'
         self.__watch_status = POSSIBLE_STATUSES[1]
         self.__comments = []
@@ -59,7 +59,7 @@ class Film:
     def set_title(self, title: str):
         self.__title = title
 
-    def set_director(self, director: str):
+    def set_director(self, director: []):
         self.__director = director
 
     def set_year(self, year: int):
@@ -119,10 +119,13 @@ class Film:
             film_info += f"{', '.join(self.__director)}\n"
         else:
             film_info += f"{self.__director}\n"
-        film_info += (
-            f"\t○ Genre(s): {', '.join(self.__genre)}\n"
-            f"\t○ Length: {self.__length} minutes\n"
-        )
+
+        if isinstance(self.__genre, list):
+            film_info += f"\t○ Genres: {', '.join(self.__genre)}\n"
+        else:
+            film_info += f"\t○ Genre: {self.__genre}\n"
+
+        film_info += f"\t○ Length: {self.__length} minutes\n"
         film_info += f"\t○ Rating: {self.__rating}/10\n" if self.__rating != 'Not rated yet' else f"\t○ Rating: {self.__rating}\n"
         film_info += f"\t○ Status: {self.__watch_status}\n"
 
@@ -170,8 +173,8 @@ class Film:
             "director": self.__director,
             "year": self.__year,
             "length": self.__length,
-            "rating": self.__rating,
             "genre": self.__genre,
+            "rating": self.__rating,
             "watch_status": self.__watch_status,
             "comments": self.__comments,
             "watch_dates": [str(date) for date in self.__watch_dates],
