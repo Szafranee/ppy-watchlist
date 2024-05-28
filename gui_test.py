@@ -149,7 +149,7 @@ class WatchlistApp:
             image_label.pack(pady=10)
 
             # Create details labels
-            for key, value in film.to_dict().items():
+            for key, value in film.to_dict(film).items():
                 if key == "cover_image_path":
                     continue
                 if key == "comments":

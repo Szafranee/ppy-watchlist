@@ -62,6 +62,10 @@ print(film_collection)
 film_collection.add_film(film1)
 film_collection.add_film(film2)
 
+for film in film_collection.get_films():
+    film.load_cover_image_path("dark_knight.jpg")
+
+
 print("Collection after adding films:")
 file_operations.write_collection_to_json_file("films.json", film_collection)
 
@@ -69,10 +73,6 @@ file_operations.load_collection_from_json_file("films.json", film_collection)
 
 print(film_collection)
 
-file_operations.export_to_txt_file("films.txt", film_collection)
 
-print("afasfafa")
-found_films = film_collection.search_films(title="The Dark Knight")
-print("Found films:")
-for film in found_films:
-    print(film)
+
+file_operations.export_to_txt_file("films.txt", film_collection)
