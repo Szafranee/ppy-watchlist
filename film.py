@@ -10,7 +10,7 @@ POSSIBLE_STATUSES = ["watched", "not watched"]
 
 
 class Film:
-    def __init__(self, title: str, director: str, year: int, length: int, genre: tuple):
+    def __init__(self, title: str, director: [], year: int, length: int, genre: tuple):
         self.__title = title
         self.__director = director
         self.__year = year
@@ -105,97 +105,90 @@ class Film:
     def load_cover_image_path(self):
         load_dotenv()
         omdb_api_key = os.getenv("OMDB_API_KEY")
-        response_json = requests.get(f"https://www.omdbapi.com/?t={self.__title}&apikey={omdb_api_key}").json()
+        response_json = requests.get(f"https://www.omdbapi.com/?t={self.__title}&y={self.__year}&apikey={omdb_api_key}").json()
         if response_json["Response"] == "True":
             return response_json["Poster"]
         else:
             return "img/missing_cover.png"
 
+    # ========== Overriden default methods
 
-# ========== Overriden default methods
+    def __str__(self):
+        film_info = f"{self.__title} ({self.__year}), directed by "
+        if isinstance(self.__director, list):
+            film_info += f"{', '.join(self.__director)}\n"
+        else:
+            film_info += f"{self.__director}\n"
+        film_info += (
+            f"\t○ Genre(s): {', '.join(self.__genre)}\n"
+            f"\t○ Length: {self.__length} minutes\n"
+        )
+        film_info += f"\t○ Rating: {self.__rating}/10\n" if self.__rating != 'Not rated yet' else f"\t○ Rating: {self.__rating}\n"
+        film_info += f"\t○ Status: {self.__watch_status}\n"
 
-def __str__(self):
-    film_info = f"{self.__title} ({self.__year}), directed by {self.__director}.\n"
-    film_info += (
-        f"\t○ Genre(s): {', '.join(self.__genre)}\n"
-        f"\t○ Length: {self.__length} minutes\n"
-    )
-    film_info += f"\t○ Rating: {self.__rating}/10\n" if self.__rating != 'Not rated yet' else f"\t○ Rating: {self.__rating}\n"
-    film_info += f"\t○ Status: {self.__watch_status}\n"
+        if self.__comments:
+            film_info += "\t○ Comments:\n"
+            for comment in self.__comments:
+                film_info += f"\t\t- \"{comment}\"\n"
 
-    if self.__comments:
-        film_info += "\t○ Comments:\n"
-        for comment in self.__comments:
-            film_info += f"\t\t- \"{comment}\"\n"
+        if self.__watch_dates:
+            film_info += "\t○ Watched on:\n"
+            for date in self.__watch_dates:
+                film_info += f"\t\t- {date}\n"
 
-    if self.__watch_dates:
-        film_info += "\t○ Watched on:\n"
-        for date in self.__watch_dates:
-            film_info += f"\t\t- {date}\n"
+        return film_info
 
-    return film_info
+    def __repr__(self):
+        return f"Film('{self.__title}', '{self.__director}', {self.__year}, '{self.__genre}', {self.__rating}, {self.__watch_status}, {self.__comments}, {self.__watch_dates})"
 
+    def __eq__(self, other):
+        return self.__title == other.get_title() and self.__director == other.get_director() and self.__year == other.get_year()
 
-def __repr__(self):
-    return f"Film('{self.__title}', '{self.__director}', {self.__year}, '{self.__genre}', {self.__rating}, {self.__watch_status}, {self.__comments}, {self.__watch_dates})"
+    def __lt__(self, other):
+        return self.__year < other.get_year()
 
+    def __le__(self, other):
+        return self.__year <= other.get_year()
 
-def __eq__(self, other):
-    return self.__title == other.get_title() and self.__director == other.get_director() and self.__year == other.get_year()
+    def __gt__(self, other):
+        return self.__year > other.get_year()
 
+    def __ge__(self, other):
+        return self.__year >= other.get_year()
 
-def __lt__(self, other):
-    return self.__year < other.get_year()
+    def __ne__(self, other):
+        return self.__title != other.get_title() or self.__director != other.get_director() or self.__year != other.get_year()
 
+    def __hash__(self):
+        return hash((self.__title, self.__director, self.__year))
 
-def __le__(self, other):
-    return self.__year <= other.get_year()
+    # ========== Additional methods
 
+    def to_dict(self):
+        return {
+            "title": self.__title,
+            "director": self.__director,
+            "year": self.__year,
+            "length": self.__length,
+            "rating": self.__rating,
+            "genre": self.__genre,
+            "watch_status": self.__watch_status,
+            "comments": self.__comments,
+            "watch_dates": [str(date) for date in self.__watch_dates],
+            "cover_image_path": self.__cover_image_path if self.__cover_image_path else "missing_cover.jpg"
+            # convert date objects to string
+        }
 
-def __gt__(self, other):
-    return self.__year > other.get_year()
-
-
-def __ge__(self, other):
-    return self.__year >= other.get_year()
-
-
-def __ne__(self, other):
-    return self.__title != other.get_title() or self.__director != other.get_director() or self.__year != other.get_year()
-
-
-def __hash__(self):
-    return hash((self.__title, self.__director, self.__year))
-
-
-# ========== Additional methods
-
-def to_dict(self):
-    return {
-        "title": self.__title,
-        "director": self.__director,
-        "year": self.__year,
-        "length": self.__length,
-        "rating": self.__rating,
-        "genre": self.__genre,
-        "watch_status": self.__watch_status,
-        "comments": self.__comments,
-        "watch_dates": [str(date) for date in self.__watch_dates],
-        "cover_image_path": self.__cover_image_path if self.__cover_image_path else "missing_cover.jpg"
-        # convert date objects to string
-    }
-
-
-def delete_comment(self):
-    print("Select the comment you want to delete:")
-    for i, comment in enumerate(self.__comments):
-        print(f"{i + 1}. {comment}")
-    try:
-        index = int(input())
-        self.__comments.pop(index - 1)
-    except ValueError:
-        print("Invalid input. Please enter a number.")
-        self.delete_comment()
-    except IndexError:
-        print("Invalid input. Please enter a number from the list.")
-        self.delete_comment()
+    def delete_comment(self):
+        print("Select the comment you want to delete:")
+        for i, comment in enumerate(self.__comments):
+            print(f"{i + 1}. {comment}")
+        try:
+            index = int(input())
+            self.__comments.pop(index - 1)
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+            self.delete_comment()
+        except IndexError:
+            print("Invalid input. Please enter a number from the list.")
+            self.delete_comment()
