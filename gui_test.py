@@ -64,6 +64,58 @@ def center_popup(popup):
     popup.geometry(f"{width}x{height}+{x}+{y}")
 
 
+def generate_stats():
+    # display a popup window with the stats
+    popup = tk.Toplevel()
+    popup.title("Stats")
+    popup.geometry("800x850")
+    popup.config(bg="#333")
+
+    title_label = tk.Label(popup, text="Your statistics:", bg="#333", fg="white", font=("Bahnschrift", 22, "bold"))
+    title_label.pack(pady=(10, 20))
+
+    stats = film_collection.generate_stats(film_collection.get_films())
+    response = ""
+
+    for key, value in stats.items():
+        if key == "genres_stats":
+            # set color to red if the value is empty
+            response += f"● Number of films by genre:\n"
+            value = sorted(value.items(), key=lambda x: x[1], reverse=True)
+            for genre, count in value:
+                response += f"   ○ {genre}: {count} films\n"
+        elif key == "avg_rating":
+            value = round(value, 2)
+            response += (f"● Average rating:\n"
+                         f"     {value}\n")
+        elif key == "watch_stats":
+            response += "● Top 10 most watched films:\n"
+            if not value:
+                response += "   ○ No films watched yet\n"
+            else:
+                value = sorted(value.items(), key=lambda x: x[1], reverse=True)
+                rank = 1
+                for film, count in value[:10]:
+                    response += f"    {rank}. {film}: ({count[0]} times, {count[1]} minutes total)\n"
+                    rank += 1
+        elif key == "rated_film_by_genre":
+            response += "● Number of rated films by genre:\n"
+            value = sorted(value.items(), key=lambda x: x[1], reverse=True)
+            for genre, count in value:
+                response += f"   ○ {genre}: {count} films\n"
+        else:
+            response += f"   ○ {value}\n"
+
+        response += "\n"
+
+    label = tk.Label(popup, text=response, bg="#333", fg="white", font=("Bahnschrift", 14, "bold"))
+    # allign the text to the left
+    label.config(justify="left")
+
+    label.pack(pady=10)
+    center_popup(popup)
+
+
 class WatchlistApp:
     def __init__(self, root):
         self.root = root
@@ -80,9 +132,14 @@ class WatchlistApp:
         # Menu (same as before)
         self.menu = tk.Menu(self.root, bg='blue', fg="white")
 
+        # Menubar
         self.file_menu = tk.Menu(self.menu, tearoff=False)
         self.menu.add_cascade(label="File", menu=self.file_menu)
         self.file_menu.add_command(label="Export to file", command=export_to_file)
+
+        self.stats_menu = tk.Menu(self.menu, tearoff=False)
+        self.menu.add_cascade(label="Stats", menu=self.stats_menu)
+        self.stats_menu.add_command(label="Generate stats", command=lambda: generate_stats())
 
         self.root.config(menu=self.menu)
 
