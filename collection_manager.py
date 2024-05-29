@@ -74,7 +74,7 @@ class CollectionManager:
 
     def count_by_genres(self, films):
         genres_stats = {}
-        for film in self.watched_films:
+        for film in self.film_collection:
             genres = film.get_genre()
             if type(genres) is str:
                 genres = [genres]
