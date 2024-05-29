@@ -31,11 +31,11 @@ def dark_title_bar(window):
     https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute
     """
     window.update()
-    DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+    dwmwa_use_immersive_dark_mode = 20
     set_window_attribute = ct.windll.dwmapi.DwmSetWindowAttribute
     get_parent = ct.windll.user32.GetParent
     hwnd = get_parent(window.winfo_id())
-    rendering_policy = DWMWA_USE_IMMERSIVE_DARK_MODE
+    rendering_policy = dwmwa_use_immersive_dark_mode
     value = 2
     value = ct.c_int(value)
     set_window_attribute(hwnd, rendering_policy, ct.byref(value),
@@ -509,6 +509,8 @@ class WatchlistApp:
                     year = film_json["Year"]
                 if not length:
                     length = film_json["Runtime"].split(" ")[0]
+                    if length == "N/A":
+                        length = 0
                 if not genres:
                     genres = film_json["Genre"]
             else:
@@ -533,7 +535,7 @@ class WatchlistApp:
                 cover_file_path = "N/A"
 
             # add the film to the collection
-            new_film = film.Film(title, director.split(", "), int(year), int(length), genres.split(", "))
+            new_film = film.Film(title, director.split(", "), year, length, genres.split(", "))
             film_collection.add_film(new_film)
             # close the popup window
             popup.destroy()
@@ -580,6 +582,8 @@ class WatchlistApp:
         values = []
         for key, value in selected_film.to_dict().items():
             if key in ["title", "director", "year", "length", "genre", "cover_image_path"]:
+                if isinstance(value, list):
+                    value = ", ".join(value)
                 values.append(value)
 
         for entry, value in zip(entries, values):
@@ -595,6 +599,12 @@ class WatchlistApp:
         def edit_film_action(entries):
             # get the values from the entry widgets
             title, director, year, length, genres, cover_file_path = [entry.get() for entry in entries]
+
+            # check if the director and genre are lists
+            if "," in director:
+                director = director.split(", ")
+            if "," in genres:
+                genres = genres.split(", ")
 
             if not title:
                 # display an error message
@@ -629,6 +639,8 @@ class WatchlistApp:
                     length = film_json["Runtime"].split(" ")[0]
                 if not genres:
                     genres = film_json["Genre"]
+                if not cover_file_path:
+                    cover_file_path = film_json["Poster"]
             else:
                 if not director:
                     director = "Unknown"
@@ -638,13 +650,16 @@ class WatchlistApp:
                     length = 0
                 if not genres:
                     genres = "Unknown"
+                if not cover_file_path:
+                    cover_file_path = "img/missing_cover.png"
 
             # update the selected film's details
             selected_film.set_title(title)
             selected_film.set_director(director)
             selected_film.set_year(int(year))
             selected_film.set_length(int(length))
-            selected_film.set_genre(genres.split(", "))
+            selected_film.set_genre(genres)
+            selected_film.set_cover_image_path(cover_file_path)
             # close the popup window
             popup.destroy()
 

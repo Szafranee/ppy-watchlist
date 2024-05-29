@@ -10,7 +10,7 @@ POSSIBLE_STATUSES = ["watched", "not watched"]
 
 
 class Film:
-    def __init__(self, title: str, director: [], year: str, length: int, genre: []):
+    def __init__(self, title: str, director: [], year: str, length: str, genre: []):
         self.__title = title
         self.__director = director
         self.__year = year
