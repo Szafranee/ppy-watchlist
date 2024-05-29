@@ -413,12 +413,21 @@ class WatchlistApp:
                 value_label.pack(side="left")
 
     def search(self, value_to_find):
+        # Clear the listbox selection to clear the last search when a new search is performed
+        # but the user didn't select all last results
+        self.film_listbox.selection_clear(0, tk.END)
+        for i in range(self.film_listbox.size()):
+            self.film_listbox.itemconfig(i, selectbackground="#555", selectforeground="white")
+            self.film_listbox.itemconfig(i, background="#444", foreground="white")
+
+        if not value_to_find:
+            return
+
         found_films = []
 
         for i, film in enumerate(film_collection.get_films()):
             for value in film.to_dict().values():
                 if value_to_find.lower() in str(value).lower():
-                    # change the background color of the selected item to a random when its selected
                     self.film_listbox.itemconfig(i, selectbackground="#abffb6", selectforeground="black")
                     self.film_listbox.itemconfig(i, background="#abffb6", foreground="black")
                     self.film_listbox.see(i)
@@ -653,22 +662,18 @@ class WatchlistApp:
                 if not cover_file_path:
                     cover_file_path = "img/missing_cover.png"
 
-            # update the selected film's details
             selected_film.set_title(title)
             selected_film.set_director(director)
             selected_film.set_year(int(year))
             selected_film.set_length(int(length))
             selected_film.set_genre(genres)
             selected_film.set_cover_image_path(cover_file_path)
-            # close the popup window
             popup.destroy()
 
-            # repopulate the film listbox
             self.populate_film_list()
-            # select the edited film in the listbox
+
             self.search_in_listbox(selected_film.get_title(), selected_film.get_year())
 
-            # display the details of the edited film
             self.display_film_details(None)
 
     def delete_film(self):
@@ -683,7 +688,6 @@ class WatchlistApp:
             pass
 
     def watch_film(self):
-        # display a popup window with a message, text entry, and a button
         popup = tk.Toplevel()
         popup.title("Watch film")
         popup.geometry("400x175")
@@ -808,7 +812,6 @@ class WatchlistApp:
             self.film_listbox.delete(0, tk.END)
 
             already_added = []
-            # Add film entries to the listbox
             for film in film_collection.get_watched():
                 if film.get_title() in already_added:
                     self.film_listbox.insert(tk.END, film.get_title() + " (" + str(film.get_year()) + ")")
@@ -835,6 +838,7 @@ class WatchlistApp:
 
     def on_select(self, event):
         try:
+            # Change the background color of the selected item to default
             index = event.widget.curselection()[0]
             event.widget.itemconfig(index, selectbackground="#555", selectforeground="white")
             event.widget.itemconfig(index, background="#444", foreground="white")
