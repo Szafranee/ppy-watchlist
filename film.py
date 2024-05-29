@@ -90,8 +90,7 @@ class Film:
         self.__watch_status = status
 
     def change_status(self):
-        self.__watch_status = POSSIBLE_STATUSES[0] if self.__watch_status == POSSIBLE_STATUSES[1] else \
-            POSSIBLE_STATUSES[1]
+        self.__watch_status = POSSIBLE_STATUSES[0] if self.__watch_status == POSSIBLE_STATUSES[1] else POSSIBLE_STATUSES[1]
 
     def add_comment(self, comment: str):
         self.__comments.append(comment)

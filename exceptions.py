@@ -12,3 +12,11 @@ class MovieNotFound(Exception):
     def __init__(self, message):
         self.message = message
         super().__init__(self.message)
+
+
+class InvalidDateFormat(Exception):
+    """Exception raised when the date is invalid"""
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
