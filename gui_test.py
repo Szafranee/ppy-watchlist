@@ -1,5 +1,4 @@
 import tkinter as tk
-import random
 
 import requests
 from PIL import Image, ImageTk
@@ -40,6 +39,9 @@ def export_to_file():
     button = tk.Button(popup, text="Export", command=lambda: export_to_file_action(entry.get()))
     button.pack(pady=10)
 
+    # center the popup window
+    center_popup(popup)
+
     # bind the <Return> event to the entry widget
     entry.bind("<Return>", lambda event: export_to_file_action(entry.get()))
 
@@ -50,12 +52,29 @@ def export_to_file():
         popup.destroy()
 
 
+def center_popup(popup):
+    popup.update_idletasks()
+    width = popup.winfo_width()
+    height = popup.winfo_height()
+    x = (popup.winfo_screenwidth() // 2) - (width // 2)
+    y = (popup.winfo_screenheight() // 2) - (height // 2)
+    popup.geometry(f"{width}x{height}+{x}+{y}")
+
+
+
+
+
 class WatchlistApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Watchlist App")
-        self.root.geometry("1200x900")
+        self.root.geometry("1200x1000")
         self.root.tk_setPalette(background='#333', foreground='white')
+        self.last_search = ""
+        self.current_film = 0
+
+        # center the window
+        center_popup(self.root)
 
         # Menu (same as before)
         self.menu = tk.Menu(self.root, bg='blue', fg="white")
@@ -65,19 +84,26 @@ class WatchlistApp:
         self.file_menu.add_command(label="Export to file", command=export_to_file)
 
         self.root.config(menu=self.menu)
+
         # Main frame
         self.main_frame = tk.Frame(self.root)
         self.main_frame.pack(fill="both", expand=True)
-
         # Search frame
         self.search_frame = tk.Frame(self.main_frame)
         self.search_frame.pack(pady=10)
 
         self.search_label = tk.Label(self.search_frame, text="Search:", fg="white")
+        self.search_label.config(font=("Bahnschrift", 16, "bold"))
         self.search_label.pack(side="left")
 
         self.search_entry = tk.Entry(self.search_frame)
-        self.search_entry.pack(side="left")
+        self.search_entry.config(font=("Bahnschrift", 14))
+        self.search_entry.pack(side="left", padx=10)
+
+        self.search_button = tk.Button(self.search_frame, text="Search",
+                                       command=lambda: self.search(self.search_entry.get()))
+        self.search_button.config(font=("Bahnschrift", 14, "bold"))
+        self.search_button.pack(side="left")
 
         # film list frame
         self.film_list_frame = tk.Label(self.main_frame, text="Your films:", fg="white")
@@ -104,17 +130,22 @@ class WatchlistApp:
         self.button_frame.pack(pady=10)
 
         self.add_button = tk.Button(self.button_frame, text="Add film", command=self.add_film)
-        self.add_button.pack(side="left")
+        self.add_button.config(font=("Bahnschrift", 18, "bold"))
+        self.add_button.config(activebackground="lightgreen")
+        self.add_button.pack(side="left", padx=10, pady=10)
+
         self.edit_button = tk.Button(self.button_frame, text="Edit film", command=self.edit_film)
-        self.edit_button.pack(side="left")
+        self.edit_button.config(font=("Bahnschrift", 18, "bold"))
+        self.edit_button.config(activebackground="lightblue")
+        self.edit_button.pack(side="left", padx=10, pady=10)
+
         self.delete_button = tk.Button(self.button_frame, text="Delete film", command=self.delete_film)
-        self.delete_button.pack(side="left")
+        self.delete_button.config(font=("Bahnschrift", 18, "bold"))
+        self.delete_button.config(activebackground="lightcoral")
+        self.delete_button.pack(side="left", padx=10, pady=10)
 
         # Populate film listbox initially
         self.populate_film_list()
-
-        # Bind selection event for film listbox
-        self.film_listbox.bind("<<ListboxSelect>>", self.display_film_details)
 
         # Bind export to file event to Ctrl+S
         self.root.bind("<Control-s>", lambda event: export_to_file())
@@ -122,7 +153,7 @@ class WatchlistApp:
         # Bind delete film event to Delete key
         self.root.bind("<Control-Delete>", lambda event: self.delete_film())
 
-        self.root.bind(self.delete_button, self.delete_film)
+        self.film_listbox.bind("<<ListboxSelect>>", self.on_select)
 
         # Display details for the first film
         self.film_listbox.selection_set(0)  # Select the first film
@@ -174,9 +205,9 @@ class WatchlistApp:
                     continue
 
                 if key == "director":
-                    key = "Director"
                     value = ", ".join(value) if isinstance(value, list) else value
 
+                    key = "Director"
                 if key == "comments":
                     if not value:  # Skip if there are no comments
                         continue
@@ -209,13 +240,33 @@ class WatchlistApp:
                                        font=("Bahnschrift", 15, "bold"))
                 value_label.pack(side="left")
 
-    def search_by_title(self):
-        pass
+    def search(self, value_to_find):
+        found_films = []
 
-    def search_by_director(self):
-        pass
+        for i, film in enumerate(film_collection.get_films()):
+            for value in film.to_dict().values():
+                if value_to_find.lower() in str(value).lower():
+                    # change the background color of the selected item to a random when its selected
+                    self.film_listbox.itemconfig(i, selectbackground="#abffb6", selectforeground="black")
+                    self.film_listbox.itemconfig(i, background="#abffb6", foreground="black")
+                    self.film_listbox.see(i)
+                    self.film_listbox.selection_set(i)
+                    self.display_film_details(None)
+                    found_films.append(i)
+                    break
+
+        if not found_films:
+            self.search_entry.delete(0, tk.END)
+            self.search_entry.insert(0, "No results found")
+            self.search_entry.config(fg="red")
+            self.root.after(2000, lambda: self.search_entry.delete(0, tk.END))
 
     def add_film(self):
+        # kill the popup window if it exists
+        for widget in self.root.winfo_children():
+            if isinstance(widget, tk.Toplevel):
+                widget.destroy()
+
         # display a popup window with a message, 5 text entries, and a button
         popup = tk.Toplevel()
         popup.title("Add film")
@@ -238,8 +289,12 @@ class WatchlistApp:
             entry.pack(side="right")
             entries.append(entry)
 
+        for entry in entries:
+            # make entry widget expandable
+            entry.pack(fill="x")
+
         # center the popup window
-        self.center_popup(popup)
+        center_popup(popup)
 
         # create a button
         button = tk.Button(popup, text="Add", command=lambda: add_film_action(entries))
@@ -302,10 +357,11 @@ class WatchlistApp:
                 image = image.resize((300, 400))
                 image.save(f"img/{title}.png")
                 cover_file_path = f"img/{title}.png"
+            else:
+                cover_file_path = "N/A"
 
             # add the film to the collection
             new_film = film.Film(title, director.split(", "), int(year), int(length), genres.split(", "))
-            new_film.set_cover_image_path(cover_file_path)
             film_collection.add_film(new_film)
             # close the popup window
             popup.destroy()
@@ -341,7 +397,7 @@ class WatchlistApp:
             entries.append(entry)
 
         # center the popup window
-        self.center_popup(popup)
+        center_popup(popup)
 
         # get the selected film
         selection = self.film_listbox.curselection()
@@ -349,10 +405,13 @@ class WatchlistApp:
         selected_film = film_collection.get_films()[index]
 
         # populate the entry widgets with the selected film's details
-        for entry, value in zip(entries, selected_film.to_dict()):
-            if value != "title" or value != "director" or value != "year" or value != "length" or value != "genre" or value != "cover_image_path":
-                continue
-            entry.insert(0, selected_film.to_dict()[value])
+        values = []
+        for key, value in selected_film.to_dict().items():
+            if key in ["title", "director", "year", "length", "genre", "cover_image_path"]:
+                values.append(value)
+
+        for entry, value in zip(entries, values):
+            entry.insert(0, value)
 
         # create a button
         button = tk.Button(popup, text="Edit", command=lambda: edit_film_action(entries))
@@ -363,7 +422,7 @@ class WatchlistApp:
 
         def edit_film_action(entries):
             # get the values from the entry widgets
-            title, director, year, length, genres = [entry.get() for entry in entries]
+            title, director, year, length, genres, cover_file_path = [entry.get() for entry in entries]
 
             if not title:
                 # display an error message
@@ -425,14 +484,6 @@ class WatchlistApp:
             # display the details of the edited film
             self.display_film_details(None)
 
-    def center_popup(self, popup):
-        popup.update_idletasks()
-        width = popup.winfo_width()
-        height = popup.winfo_height()
-        x = (popup.winfo_screenwidth() // 2) - (width // 2)
-        y = (popup.winfo_screenheight() // 2) - (height // 2)
-        popup.geometry(f"{width}x{height}+{x}+{y}")
-
     def delete_film(self):
         try:
             index = self.film_listbox.curselection()[0]
@@ -453,6 +504,20 @@ class WatchlistApp:
                 self.film_listbox.selection_set(i)
                 self.film_listbox.see(i)
                 break
+
+    def get_current_index(self):
+        index = self.film_listbox.curselection()[0]
+        self.current_film = index
+        print(self.current_film)
+
+    def on_select(self, event):
+        try:
+            index = event.widget.curselection()[0]
+            event.widget.itemconfig(index, selectbackground="#555", selectforeground="white")
+            event.widget.itemconfig(index, background="#444", foreground="white")
+            self.display_film_details(None)
+        except IndexError:
+            pass
 
 
 if __name__ == "__main__":
