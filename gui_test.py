@@ -13,6 +13,8 @@ import exceptions
 from dotenv import load_dotenv
 import os
 
+import ctypes as ct
+
 load_dotenv()
 
 OMDB_API_KEY = os.getenv("OMDB_API_KEY")
@@ -23,6 +25,23 @@ file_operations.load_collection_from_json_file("films.json", film_collection)
 film_collection.add_to_watched()
 
 
+def dark_title_bar(window):
+    """
+    MORE INFO:
+    https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute
+    """
+    window.update()
+    DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+    set_window_attribute = ct.windll.dwmapi.DwmSetWindowAttribute
+    get_parent = ct.windll.user32.GetParent
+    hwnd = get_parent(window.winfo_id())
+    rendering_policy = DWMWA_USE_IMMERSIVE_DARK_MODE
+    value = 2
+    value = ct.c_int(value)
+    set_window_attribute(hwnd, rendering_policy, ct.byref(value),
+                         ct.sizeof(value))
+
+
 def export_to_file():
     # display a popup window with a message, text entry, and a button
     popup_top = tk.Toplevel()
@@ -30,9 +49,10 @@ def export_to_file():
     popup_top.geometry("455x195")
     popup_top.config(bg="#333")
 
+
     label = tk.Label(popup_top, text="Enter the path to a directory where you want to save the file:\n"
-                                 "(e.g. C:/Users/JohnDoe/Desktop/films)\n"
-                                 "or select a directory:", bg="#333", fg="white", font=("Bahnschrift", 11, "bold"))
+                                     "(e.g. C:/Users/JohnDoe/Desktop/films)\n"
+                                     "or select a directory:", bg="#333", fg="white", font=("Bahnschrift", 11, "bold"))
     label.pack(pady=10)
 
     entry = tk.Entry(popup_top, bg="#444", fg="white")
@@ -41,7 +61,8 @@ def export_to_file():
     # put the button next to the entry widget
     icon = tk.PhotoImage(file="img/folder_icon_white.png")
     icon = icon.subsample(20)
-    button = tk.Button(popup_top, text="Choose a directory:", image=icon, compound="right", command=lambda: select_directory(entry))
+    button = tk.Button(popup_top, text="Choose a directory: ", image=icon, compound="right",
+                       command=lambda: select_directory(entry))
     button.image = icon
     button.pack(side="top", pady=5)
 
@@ -119,6 +140,7 @@ def export_to_file():
 
 
 def center_popup(popup):
+    dark_title_bar(popup)
     popup.update_idletasks()
     width = popup.winfo_width()
     height = popup.winfo_height()
@@ -133,6 +155,7 @@ def generate_stats():
     popup.title("Stats")
     popup.geometry("800x850")
     popup.config(bg="#333")
+
 
     title_label = tk.Label(popup, text="Your statistics:", bg="#333", fg="white", font=("Bahnschrift", 22, "bold"))
     title_label.pack(pady=(10, 20))
@@ -810,3 +833,4 @@ if __name__ == "__main__":
     app = WatchlistApp(root)
     root.mainloop()
     file_operations.write_collection_to_json_file("films.json", film_collection)
+    exit()
