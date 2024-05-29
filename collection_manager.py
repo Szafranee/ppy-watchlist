@@ -21,6 +21,11 @@ class CollectionManager:
     def get_watched(self):
         return self.watched_films
 
+    def add_to_watched(self):
+        for film in self.film_collection:
+            if film.get_status() == "watched":
+                self.watched_films.add(film)
+
     def search_films(self, **kwargs):
         result = []
         for film in self.film_collection:
@@ -45,12 +50,9 @@ class CollectionManager:
         film.get_watch_dates().append(watch_date)
 
     def print_watched(self):
-        response = "Watched films:\n"
+        response = ""
         for film in self.watched_films:
-            response += "● " + film.get_title() + " (" + str(film.get_year()) + ")\n"
-            response += "  " + "Watched on: " + ", ".join(str(watch_date) for watch_date in film.get_watch_dates()) + "\n"
-            response += "\n"
-
+            response += str(film) + "\n"
         return response
 
     def generate_stats(self, films):
