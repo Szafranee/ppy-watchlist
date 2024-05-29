@@ -100,6 +100,8 @@ class Film:
         self.__watch_dates.append(date)
 
     def set_cover_image_path(self, path: str):
+        if path == "N/A":
+            self.__cover_image_path = "img/missing_cover.png"
         self.__cover_image_path = path
 
     def load_cover_image_path(self):
@@ -178,7 +180,7 @@ class Film:
             "watch_status": self.__watch_status,
             "comments": self.__comments,
             "watch_dates": [str(date) for date in self.__watch_dates],
-            "cover_image_path": self.__cover_image_path if self.__cover_image_path else "missing_cover.jpg"
+            "cover_image_path": self.__cover_image_path if self.__cover_image_path else "img/missing_cover.png"
             # convert date objects to string
         }
 
