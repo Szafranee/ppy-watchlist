@@ -75,20 +75,28 @@ class CollectionManager:
     def count_by_genres(self, films):
         genres_stats = {}
         for film in self.watched_films:
-            if film.get_genre() in genres_stats:
-                genres_stats[film.get_genre()] += 1
-            else:
-                genres_stats[film.get_genre()] = 1
+            genres = film.get_genre()
+            if type(genres) is str:
+                genres = [genres]
+            for genre in genres:
+                if genre in genres_stats:
+                    genres_stats[genre] += 1
+                else:
+                    genres_stats[genre] = 1
         return genres_stats
 
     def calculate_avg_rating(self, films):
         total = 0
-        for film in self.watched_films:
+        num_of_rated_films = len([film for film in films if film.get_rating() != "Not rated yet"])
+
+        for film in self.film_collection:
+            if film.get_rating() == "Not rated yet":
+                continue
             total += film.get_rating()
-        return total / len(films)
+        return total / num_of_rated_films if num_of_rated_films != 0 else "No rated films yet"
 
     def calculate_watch_stats(self, films):
-        if films == self.get_films() or films == list(set(self.get_films()) - set(self.get_watched())):
+        if films == list(set(self.get_films()) - set(self.get_watched())):
             return None
 
         watch_stats = {}
@@ -99,7 +107,7 @@ class CollectionManager:
         return watch_stats
 
     def count_rated_film_by_genre(self, films):
-        rated_films = [film for film in films if film.get_rating() > 0]
+        rated_films = [film for film in films if film.get_rating() != "Not rated yet"]
         return self.count_by_genres(rated_films)
 
     def clear_collection(self):
