@@ -1,3 +1,4 @@
+import tkinter
 import tkinter as tk
 from datetime import date
 
@@ -24,35 +25,97 @@ film_collection.add_to_watched()
 
 def export_to_file():
     # display a popup window with a message, text entry, and a button
-    popup = tk.Toplevel()
-    popup.title("Export to file")
-    popup.geometry("300x150")
-    popup.config(bg="#333")
+    popup_top = tk.Toplevel()
+    popup_top.title("Export to file")
+    popup_top.geometry("455x195")
+    popup_top.config(bg="#333")
 
-    # create a label
-    label = tk.Label(popup, text="Enter the name of a txt file to export to:\n (w/o the extension)",
-                     bg="#333", fg="white", font=("Bahnschrift", 11, "bold"))
+    label = tk.Label(popup_top, text="Enter the path to a directory where you want to save the file:\n"
+                                 "(e.g. C:/Users/JohnDoe/Desktop/films)\n"
+                                 "or select a directory:", bg="#333", fg="white", font=("Bahnschrift", 11, "bold"))
     label.pack(pady=10)
 
-    # create an entry widget
-    entry = tk.Entry(popup, bg="#444", fg="white")
-    entry.pack(pady=10)
+    entry = tk.Entry(popup_top, bg="#444", fg="white")
+    entry.pack(side="top", padx=10)
+
+    # put the button next to the entry widget
+    icon = tk.PhotoImage(file="img/folder_icon_white.png")
+    icon = icon.subsample(20)
+    button = tk.Button(popup_top, text="Choose a directory:", image=icon, compound="right", command=lambda: select_directory(entry))
+    button.image = icon
+    button.pack(side="top", pady=5)
 
     # create a button
-    button = tk.Button(popup, text="Export", command=lambda: export_to_file_action(entry.get()))
-    button.pack(pady=10)
+    button = tk.Button(popup_top, text="Choose", command=lambda: set_file_name(entry.get()))
+    button.pack(pady=10, side="top")
 
     # center the popup window
-    center_popup(popup)
+    center_popup(popup_top)
 
     # bind the <Return> event to the entry widget
-    entry.bind("<Return>", lambda event: export_to_file_action(entry.get()))
+    entry.bind("<Return>", lambda event: export_to_file_action(entry.get(), popup_top))
 
-    def export_to_file_action(file_name):
-        # write the collection to a file
-        file_operations.export_to_txt_file(file_name + ".txt", film_collection)
-        # close the popup window
+    def select_directory(entry):
+        # open a directory selection dialog
+        directory = file_operations.select_directory()
+        # set the selected directory as the entry widget's value
+        entry.delete(0, tk.END)
+        entry.insert(0, directory)
+        # set the focus to the entry widget
+        entry.focus()
+
+    def set_file_name(file_target_dir):
+        popup = tk.Toplevel()
+        popup.title("Choose file name")
+        popup.geometry("370x150")
+        popup.config(bg="#333")
+
+        label = tk.Label(popup, text="Enter the name of the file (without the extension):", bg="#333", fg="white",
+                         font=("Bahnschrift", 11, "bold"))
+        label.pack(pady=10)
+
+        entry = tk.Entry(popup, bg="#444", fg="white")
+        entry.pack(pady=10)
+
+        button = tk.Button(popup, text="Export",
+                           command=lambda: export_to_file_action(file_target_dir + "/" + entry.get(), popup))
+        button.pack(pady=10)
+
+        center_popup(popup)
+
+    def export_to_file_action(file_name, popup):
         popup.destroy()
+        if not file_name:
+            # display an error message
+            # destroy the previous error message if it exists
+            for widget in popup.winfo_children():
+                if isinstance(widget, tk.Label) and widget.cget("fg") == "red":
+                    widget.destroy()
+            error_label = tk.Label(popup, text="File name cannot be empty!", bg="#333", fg="red")
+            error_label.pack()
+            return
+
+        try:
+            file_operations.export_to_txt_file(file_name + ".txt", film_collection)
+            popup.destroy()
+        except exceptions.FileError as e:
+            # display an error message
+            # destroy the previous error message if it exists
+            for widget in popup.winfo_children():
+                if isinstance(widget, tk.Label) and widget.cget("fg") == "red":
+                    widget.destroy()
+            error_label = tk.Label(popup, text=str(e), bg="#333", fg="red")
+            error_label.pack()
+            return
+
+        check_if_file_was_created(file_name + ".txt", popup)
+
+    def check_if_file_was_created(file_name, popup):
+        popup_top.destroy()
+        if os.path.exists(file_name):
+            tkinter.messagebox.showinfo("Success", f"File {file_name} was created successfully!")
+        else:
+            tkinter.messagebox.showerror("Error", f"File {file_name} was not created!")
 
 
 def center_popup(popup):
@@ -218,10 +281,13 @@ class WatchlistApp:
         self.delete_button.config(activebackground="lightcoral")
         self.delete_button.pack(side="left", padx=10, pady=10)
 
-        self.only_watched_button = tk.Checkbutton(self.button_frame, text="Show only watched", variable=self.is_show_only_watched,
+        self.only_watched_button = tk.Checkbutton(self.button_frame, text="Show only watched",
+                                                  variable=self.is_show_only_watched,
                                                   onvalue=True, offvalue=False,
-                                                  command=lambda: self.show_only_watched(self.is_show_only_watched.get()))
-        self.only_watched_button.config(font=("Bahnschrift", 18, "bold"), bg="#333", fg="white", selectcolor="black", foreground="white")
+                                                  command=lambda: self.show_only_watched(
+                                                      self.is_show_only_watched.get()))
+        self.only_watched_button.config(font=("Bahnschrift", 18, "bold"), bg="#333", fg="white", selectcolor="black",
+                                        foreground="white")
         self.only_watched_button.pack(side="left", padx=10, pady=10)
 
         # Populate film listbox initially
@@ -585,7 +651,8 @@ class WatchlistApp:
         popup.geometry("400x175")
         popup.config(bg="#333")
 
-        label = tk.Label(popup, text="Enter the watch date (YYYY-MM-DD)\nor leave empty for today:", bg="#333", fg="white", font=("Bahnschrift", 11, "bold"))
+        label = tk.Label(popup, text="Enter the watch date (YYYY-MM-DD)\nor leave empty for today:", bg="#333",
+                         fg="white", font=("Bahnschrift", 11, "bold"))
         label.pack(pady=10)
 
         entry = tk.Entry(popup, bg="#444", fg="white")
@@ -609,7 +676,9 @@ class WatchlistApp:
                     for widget in popup.winfo_children():
                         if isinstance(widget, tk.Label) and widget.cget("fg") == "red":
                             widget.destroy()
-                    error_label = tk.Label(popup, text="Invalid date format! Please enter a date in the format YYYY-MM-DD.", bg="#333", fg="red")
+                    error_label = tk.Label(popup,
+                                           text="Invalid date format! Please enter a date in the format YYYY-MM-DD.",
+                                           bg="#333", fg="red")
                     error_label.pack()
                     return
 
@@ -625,7 +694,8 @@ class WatchlistApp:
         popup.geometry("300x150")
         popup.config(bg="#333")
 
-        label = tk.Label(popup, text="Enter the rating (0-10):", bg="#333", fg="white", font=("Bahnschrift", 11, "bold"))
+        label = tk.Label(popup, text="Enter the rating (0-10):", bg="#333", fg="white",
+                         font=("Bahnschrift", 11, "bold"))
         label.pack(pady=10)
 
         entry = tk.Entry(popup, bg="#444", fg="white")
@@ -649,7 +719,8 @@ class WatchlistApp:
                 for widget in popup.winfo_children():
                     if isinstance(widget, tk.Label) and widget.cget("fg") == "red":
                         widget.destroy()
-                error_label = tk.Label(popup, text="Invalid rating! Please enter a number between 0 and 10.", bg="#333", fg="red")
+                error_label = tk.Label(popup, text="Invalid rating! Please enter a number between 0 and 10.", bg="#333",
+                                       fg="red")
                 error_label.pack()
                 return
 
