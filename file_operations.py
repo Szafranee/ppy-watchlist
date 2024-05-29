@@ -57,3 +57,13 @@ def remove_trailing_empty_lines(file_path):
 
     with open(file_path, 'w', encoding='utf-8') as file:
         file.writelines(lines)
+
+
+def select_directory():
+    import tkinter as tk
+    from tkinter import filedialog
+
+    root = tk.Tk()
+    root.withdraw()
+    folder_selected = filedialog.askdirectory()
+    return folder_selected
