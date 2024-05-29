@@ -10,7 +10,7 @@ POSSIBLE_STATUSES = ["watched", "not watched"]
 
 
 class Film:
-    def __init__(self, title: str, director: [], year: int, length: int, genre: []):
+    def __init__(self, title: str, director: [], year: str, length: int, genre: []):
         self.__title = title
         self.__director = director
         self.__year = year
@@ -62,7 +62,7 @@ class Film:
     def set_director(self, director: []):
         self.__director = director
 
-    def set_year(self, year: int):
+    def set_year(self, year: str):
         self.__year = year
 
     def set_length(self, length: int):
@@ -164,7 +164,7 @@ class Film:
         return self.__title != other.get_title() or self.__director != other.get_director() or self.__year != other.get_year()
 
     def __hash__(self):
-        return hash((self.__title, self.__director, self.__year))
+        return hash((self.__title, self.__year))
 
     # ========== Additional methods
 
