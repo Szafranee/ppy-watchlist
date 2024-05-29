@@ -1,4 +1,5 @@
 import tkinter as tk
+from datetime import date
 
 import requests
 from PIL import Image, ImageTk
@@ -6,6 +7,7 @@ from PIL import Image, ImageTk
 import collection_manager
 import file_operations
 import film
+import exceptions
 
 from dotenv import load_dotenv
 import os
@@ -17,6 +19,7 @@ OMDB_API_KEY = os.getenv("OMDB_API_KEY")
 # Sample film data (replace with your actual data)
 film_collection = collection_manager.CollectionManager()
 file_operations.load_collection_from_json_file("films.json", film_collection)
+film_collection.add_to_watched()
 
 
 def export_to_file():
@@ -61,17 +64,15 @@ def center_popup(popup):
     popup.geometry(f"{width}x{height}+{x}+{y}")
 
 
-
-
-
 class WatchlistApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Watchlist App")
-        self.root.geometry("1200x1000")
+        self.root.geometry("1600x1000")
         self.root.tk_setPalette(background='#333', foreground='white')
         self.last_search = ""
         self.current_film = 0
+        self.is_show_only_watched = tk.BooleanVar()
 
         # center the window
         center_popup(self.root)
@@ -129,6 +130,22 @@ class WatchlistApp:
         self.button_frame = tk.Frame(self.main_frame)
         self.button_frame.pack(pady=10)
 
+        self.watch_film_button = tk.Button(self.button_frame, text="Watch film",
+                                           command=self.watch_film)
+        self.watch_film_button.config(font=("Bahnschrift", 18, "bold"))
+        self.watch_film_button.config(activebackground="DarkOrchid3")
+        self.watch_film_button.pack(side="left", padx=10, pady=10)
+
+        self.rate_film_button = tk.Button(self.button_frame, text="Rate film", command=self.rate_film)
+        self.rate_film_button.config(font=("Bahnschrift", 18, "bold"))
+        self.rate_film_button.config(activebackground="goldenrod1")
+        self.rate_film_button.pack(side="left", padx=10, pady=10)
+
+        self.add_comment_button = tk.Button(self.button_frame, text="Add comment", command=self.add_comment)
+        self.add_comment_button.config(font=("Bahnschrift", 18, "bold"))
+        self.add_comment_button.config(activebackground="sea green")
+        self.add_comment_button.pack(side="left", padx=(10, 120), pady=10)
+
         self.add_button = tk.Button(self.button_frame, text="Add film", command=self.add_film)
         self.add_button.config(font=("Bahnschrift", 18, "bold"))
         self.add_button.config(activebackground="lightgreen")
@@ -143,6 +160,12 @@ class WatchlistApp:
         self.delete_button.config(font=("Bahnschrift", 18, "bold"))
         self.delete_button.config(activebackground="lightcoral")
         self.delete_button.pack(side="left", padx=10, pady=10)
+
+        self.only_watched_button = tk.Checkbutton(self.button_frame, text="Show only watched", variable=self.is_show_only_watched,
+                                                  onvalue=True, offvalue=False,
+                                                  command=lambda: self.show_only_watched(self.is_show_only_watched.get()))
+        self.only_watched_button.config(font=("Bahnschrift", 18, "bold"), bg="#333", fg="white", selectcolor="black", foreground="white")
+        self.only_watched_button.pack(side="left", padx=10, pady=10)
 
         # Populate film listbox initially
         self.populate_film_list()
@@ -181,7 +204,10 @@ class WatchlistApp:
         selection = self.film_listbox.curselection()
         if selection:
             index = selection[0]
-            film = film_collection.get_films()[index]
+            if self.is_show_only_watched.get():
+                film = list(film_collection.get_watched())[index]
+            else:
+                film = film_collection.get_films()[index]
 
             # Load and resize image
             image_path = film.get_cover_image_path()
@@ -237,7 +263,7 @@ class WatchlistApp:
                                      font=("Bahnschrift", 13))
                 key_label.pack(side="left")
                 value_label = tk.Label(detail_frame, text=f"{value}", bg="#444", fg="white",
-                                       font=("Bahnschrift", 15, "bold"))
+                                       font=("Bahnschrift", 15, "bold"), wraplength=500)
                 value_label.pack(side="left")
 
     def search(self, value_to_find):
@@ -494,6 +520,137 @@ class WatchlistApp:
             self.display_film_details(None)
         except IndexError:
             pass
+
+    def watch_film(self):
+        # display a popup window with a message, text entry, and a button
+        popup = tk.Toplevel()
+        popup.title("Watch film")
+        popup.geometry("400x175")
+        popup.config(bg="#333")
+
+        label = tk.Label(popup, text="Enter the watch date (YYYY-MM-DD)\nor leave empty for today:", bg="#333", fg="white", font=("Bahnschrift", 11, "bold"))
+        label.pack(pady=10)
+
+        entry = tk.Entry(popup, bg="#444", fg="white")
+        entry.pack(pady=10)
+
+        center_popup(popup)
+
+        button = tk.Button(popup, text="Watch", command=lambda: watch_film_action(entry.get()))
+        button.pack(pady=10)
+
+        entry.bind("<Return>", lambda event: watch_film_action(entry.get()))
+
+        def watch_film_action(watch_date):
+            if not watch_date:
+                watch_date = date.today().isoformat()
+            else:
+                try:
+                    year, month, day = map(int, watch_date.split("-"))
+                    date(year, month, day)
+                except ValueError:
+                    for widget in popup.winfo_children():
+                        if isinstance(widget, tk.Label) and widget.cget("fg") == "red":
+                            widget.destroy()
+                    error_label = tk.Label(popup, text="Invalid date format! Please enter a date in the format YYYY-MM-DD.", bg="#333", fg="red")
+                    error_label.pack()
+                    return
+
+            index = self.film_listbox.curselection()[0]
+            film = film_collection.get_films()[index]
+            film_collection.watch_film(film, watch_date)
+            popup.destroy()
+            self.display_film_details(None)
+
+    def rate_film(self):
+        popup = tk.Toplevel()
+        popup.title("Rate film")
+        popup.geometry("300x150")
+        popup.config(bg="#333")
+
+        label = tk.Label(popup, text="Enter the rating (0-10):", bg="#333", fg="white", font=("Bahnschrift", 11, "bold"))
+        label.pack(pady=10)
+
+        entry = tk.Entry(popup, bg="#444", fg="white")
+        entry.pack(pady=10)
+
+        center_popup(popup)
+
+        button = tk.Button(popup, text="Rate", command=lambda: rate_film_action(entry.get()))
+        button.pack(pady=10)
+
+        entry.bind("<Return>", lambda event: rate_film_action(entry.get()))
+
+        def rate_film_action(rating):
+            try:
+                if not rating:
+                    raise exceptions.ScaleError("Rating cannot be empty!")
+                rating = float(rating)
+                if rating < 0 or rating > 10:
+                    raise exceptions.ScaleError("Rating must be in range 0-10")
+            except exceptions.ScaleError:
+                for widget in popup.winfo_children():
+                    if isinstance(widget, tk.Label) and widget.cget("fg") == "red":
+                        widget.destroy()
+                error_label = tk.Label(popup, text="Invalid rating! Please enter a number between 0 and 10.", bg="#333", fg="red")
+                error_label.pack()
+                return
+
+            index = self.film_listbox.curselection()[0]
+            film = film_collection.get_films()[index]
+            film.set_rating(rating)
+            popup.destroy()
+            self.display_film_details(None)
+
+    def add_comment(self):
+        popup = tk.Toplevel()
+        popup.title("Add comment")
+        popup.geometry("300x150")
+        popup.config(bg="#333")
+
+        label = tk.Label(popup, text="Enter your comment:", bg="#333", fg="white", font=("Bahnschrift", 11, "bold"))
+        label.pack(pady=10)
+
+        entry = tk.Entry(popup, bg="#444", fg="white")
+        entry.pack(pady=10)
+
+        center_popup(popup)
+
+        button = tk.Button(popup, text="Add", command=lambda: add_comment_action(entry.get()))
+        button.pack(pady=10)
+
+        entry.bind("<Return>", lambda event: add_comment_action(entry.get()))
+
+        def add_comment_action(comment):
+            if not comment:
+                for widget in popup.winfo_children():
+                    if isinstance(widget, tk.Label) and widget.cget("fg") == "red":
+                        widget.destroy()
+                error_label = tk.Label(popup, text="Comment cannot be empty!", bg="#333", fg="red")
+                error_label.pack()
+                return
+            else:
+                index = self.film_listbox.curselection()[0]
+                film = film_collection.get_films()[index]
+                film.add_comment(comment)
+                popup.destroy()
+                self.display_film_details(None)
+
+    def show_only_watched(self, is_show_only_watched):
+        if is_show_only_watched:
+            # Clear the listbox
+            self.film_listbox.delete(0, tk.END)
+
+            already_added = []
+            # Add film entries to the listbox
+            for film in film_collection.get_watched():
+                if film.get_title() in already_added:
+                    self.film_listbox.insert(tk.END, film.get_title() + " (" + str(film.get_year()) + ")")
+                else:
+                    self.film_listbox.insert(tk.END, film.get_title())
+                    already_added.append(film.get_title())
+        else:
+            self.populate_film_list()
 
     def search_in_listbox(self, title, year):
         if not title:
