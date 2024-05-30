@@ -73,6 +73,11 @@ class CollectionManager:
         return films_stats
 
     def count_by_genres(self, films):
+        """
+        Count the number of films in each genre
+        :param films: list of films
+        :return: dictionary with genres stats
+        """
         genres_stats = {}
         for film in self.film_collection:
             genres = film.get_genre()
@@ -96,6 +101,11 @@ class CollectionManager:
         return total / num_of_rated_films if num_of_rated_films != 0 else "No rated films yet"
 
     def calculate_watch_stats(self, films):
+        """
+        Calculate the total number of watches and total time spent watching the films
+        :param films: list of films
+        :return: dictionary with watch stats
+        """
         if films == list(set(self.get_films()) - set(self.get_watched())):
             return None
 

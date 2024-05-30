@@ -27,8 +27,10 @@ film_collection.add_to_watched()
 
 def dark_title_bar(window):
     """
-    MORE INFO:
-    https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute
+    This function is used to apply a dark theme to the title bar of a window.
+
+    Args:
+        window (tkinter.Tk): The window to apply the dark theme to.
     """
     window.update()
     dwmwa_use_immersive_dark_mode = 20
@@ -43,6 +45,10 @@ def dark_title_bar(window):
 
 
 def export_to_file():
+    """
+    This function is used to export the film collection to a file.
+    It opens a popup window where the user can enter the path to the directory where they want to save the file.
+    """
     # display a popup window with a message, text entry, and a button
     popup_top = tk.Toplevel()
     popup_top.title("Export to file")
@@ -150,6 +156,10 @@ def center_popup(popup):
 
 
 def generate_stats():
+    """
+    This function is used to generate statistics about the film collection.
+    It opens a popup window where the statistics are displayed.
+    """
     # display a popup window with the stats
     popup = tk.Toplevel()
     popup.title("Stats")
@@ -204,6 +214,11 @@ def generate_stats():
 
 class WatchlistApp:
     def __init__(self, root):
+        """
+        This is the constructor of the WatchlistApp class. It initializes the main window of the application.
+        It creates the main frame, search frame, film list frame, details frame, and buttons.
+        It also populates the film listbox with the films from the film collection.
+        """
         self.root = root
         self.root.title("Watchlist App")
         self.root.geometry("1600x1000")
@@ -322,13 +337,16 @@ class WatchlistApp:
         # Bind delete film event to Delete key
         self.root.bind("<Control-Delete>", lambda event: self.delete_film())
 
-        self.film_listbox.bind("<<ListboxSelect>>", self.on_select)
+        self.film_listbox.bind("<<ListboxSelect>>", self.set_default_color_on_select)
 
         # Display details for the first film
         self.film_listbox.selection_set(0)  # Select the first film
-        self.display_film_details(None)  # Call the function with a dummy event
+        self.display_film_details()  # Call the function with a dummy event
 
     def populate_film_list(self):
+        """
+        This method is used to populate the film listbox with the films in the collection.
+        """
         # Clear the listbox
         self.film_listbox.delete(0, tk.END)
 
@@ -341,7 +359,10 @@ class WatchlistApp:
                 self.film_listbox.insert(tk.END, film.get_title())
                 already_added.append(film.get_title())
 
-    def display_film_details(self, event):
+    def display_film_details(self):
+        """
+        This method is used to display the details of a film in the details frame.
+        """
         # Clear the details frame
         for widget in self.details_frame.winfo_children():
             widget.destroy()
@@ -413,6 +434,15 @@ class WatchlistApp:
                 value_label.pack(side="left")
 
     def search(self, value_to_find):
+        """
+        This method is used to search for a film in the collection.
+        It highlights the found film in the listbox and displays its details.
+        It also clears the selection if the search is empty.
+        It displays an error message if no results are found.
+
+        Args:
+            value_to_find (str): The value to search for.
+        """
         # Clear the listbox selection to clear the last search when a new search is performed
         # but the user didn't select all last results
         self.film_listbox.selection_clear(0, tk.END)
@@ -432,7 +462,7 @@ class WatchlistApp:
                     self.film_listbox.itemconfig(i, background="#abffb6", foreground="black")
                     self.film_listbox.see(i)
                     self.film_listbox.selection_set(i)
-                    self.display_film_details(None)
+                    self.display_film_details()
                     found_films.append(i)
                     break
 
@@ -443,6 +473,10 @@ class WatchlistApp:
             self.root.after(2000, lambda: self.search_entry.delete(0, tk.END))
 
     def add_film(self):
+        """
+        This method is used to add a film to the collection.
+        It opens a popup window where the user can enter the details of the film.
+        """
         # kill the popup window if it exists
         for widget in self.root.winfo_children():
             if isinstance(widget, tk.Toplevel):
@@ -553,9 +587,15 @@ class WatchlistApp:
             # select the newly added film in the listbox
             self.search_in_listbox(new_film.get_title(), new_film.get_year())
             # display the details of the newly added film
-            self.display_film_details(None)
+            self.display_film_details()
 
     def edit_film(self):
+        """
+        This method is used to add a film to the collection.
+        It opens a popup window where the user can enter the details of the film.
+        It also populates the entry widgets with the details of the selected film.
+        It displays an error message if the title is empty.
+        """
         pass
         # display a popup window with a message, 5 text entries, and a button
         popup = tk.Toplevel()
@@ -674,20 +714,29 @@ class WatchlistApp:
 
             self.search_in_listbox(selected_film.get_title(), selected_film.get_year())
 
-            self.display_film_details(None)
+            self.display_film_details()
 
     def delete_film(self):
+        """
+        This method is used to delete a film from the collection.
+        """
         try:
             index = self.film_listbox.curselection()[0]
             film = film_collection.get_films()[index]
             film_collection.remove_film(film)
             self.film_listbox.delete(index)
             self.film_listbox.selection_set(index)
-            self.display_film_details(None)
+            self.display_film_details()
         except IndexError:
             pass
 
     def watch_film(self):
+        """
+        This method is used to mark a film as watched.
+        It opens a popup window where the user can enter the watch date. If the watch date is empty, the current date
+        is used.
+        """
+
         popup = tk.Toplevel()
         popup.title("Watch film")
         popup.geometry("400x175")
@@ -728,9 +777,14 @@ class WatchlistApp:
             film = film_collection.get_films()[index]
             film_collection.watch_film(film, watch_date)
             popup.destroy()
-            self.display_film_details(None)
+            self.display_film_details()
 
     def rate_film(self):
+        """
+        This method is used to rate a film.
+        It opens a popup window where the user can enter the rating. If the rating is empty or not in the range 0-10,
+        an error message is displayed.
+        """
         popup = tk.Toplevel()
         popup.title("Rate film")
         popup.geometry("300x150")
@@ -770,9 +824,14 @@ class WatchlistApp:
             film = film_collection.get_films()[index]
             film.set_rating(rating)
             popup.destroy()
-            self.display_film_details(None)
+            self.display_film_details()
 
     def add_comment(self):
+        """
+        This method is used to add a comment to a film.
+        It opens a popup window where the user can enter the comment. If the comment is empty, an error message is
+        displayed.
+        """
         popup = tk.Toplevel()
         popup.title("Add comment")
         popup.geometry("300x150")
@@ -804,9 +863,16 @@ class WatchlistApp:
                 film = film_collection.get_films()[index]
                 film.add_comment(comment)
                 popup.destroy()
-                self.display_film_details(None)
+                self.display_film_details()
 
     def show_only_watched(self, is_show_only_watched):
+        """
+        This method is used to filter the film listbox to show only watched films. It clears the listbox and populates
+        it with the watched films. As watched_films is a set, the films are added to the listbox in the "random" order.
+
+        Args:
+            is_show_only_watched (bool): Whether to show only watched films.
+        """
         if is_show_only_watched:
             # Clear the listbox
             self.film_listbox.delete(0, tk.END)
@@ -822,6 +888,15 @@ class WatchlistApp:
             self.populate_film_list()
 
     def search_in_listbox(self, title, year):
+        """
+        This method is used to search for a film in the listbox.
+        It is used when adding a new film and editing a film to highlight the newly added or edited film in the listbox.
+
+        Args:
+            title (str): The title of the film to search for.
+            year (int): The year of the film to search for.
+        """
+
         if not title:
             return
         for i, film in enumerate(film_collection.get_films()):
@@ -836,13 +911,20 @@ class WatchlistApp:
         self.current_film = index
         print(self.current_film)
 
-    def on_select(self, event):
+    def set_default_color_on_select(self, event):
+        """
+        This method is used to set the default color of the selected item in the listbox. It helps un-highlight the
+        found films when checking them out.
+
+        Args:
+            event (tkinter.Event): The event that triggered the method.
+        """
         try:
             # Change the background color of the selected item to default
             index = event.widget.curselection()[0]
             event.widget.itemconfig(index, selectbackground="#555", selectforeground="white")
             event.widget.itemconfig(index, background="#444", foreground="white")
-            self.display_film_details(None)
+            self.display_film_details()
         except IndexError:
             pass
 
