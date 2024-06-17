@@ -180,7 +180,6 @@ class Film:
             "comments": self.__comments,
             "watch_dates": [str(date) for date in self.__watch_dates],
             "cover_image_path": self.__cover_image_path if self.__cover_image_path else "img/missing_cover.png"
-            # convert date objects to string
         }
 
     def delete_comment(self):

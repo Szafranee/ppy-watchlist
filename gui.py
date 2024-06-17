@@ -15,6 +15,9 @@ import os
 
 import ctypes as ct
 
+# Sets the app to be DPI aware (scaling)
+ct.windll.user32.SetProcessDPIAware()
+
 load_dotenv()
 
 OMDB_API_KEY = os.getenv("OMDB_API_KEY")
